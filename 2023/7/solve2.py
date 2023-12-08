@@ -2,24 +2,26 @@
 import re
 import numpy as np
 
-#with open('example', 'r') as f:
+# with open('example', 'r') as f:
 with open("input", "r") as f:
-    inp = [x.strip().split(' ') for x in f.readlines() if x.strip()]
+    inp = [x.strip().split(" ") for x in f.readlines() if x.strip()]
 
 # Define the hands and their bids
 hands = inp
 
+
 # Function to convert card to numerical value
 def card_value(card):
-    values = {'A': 14, 'K': 13, 'Q': 12, 'J': 1, 'T': 10}
+    values = {"A": 14, "K": 13, "Q": 12, "J": 1, "T": 10}
     return values[card] if card in values else int(card)
+
 
 def sort_hands(hand_info):
     hand, _ = hand_info
-    # Convert each card in the hand to its numerical value, keeping the original order
+    # Convert each card in the hand to its numerical value, use negative so that it's reversed when doing a tie-breaker
     hand_values = [-1 * card_value(card) for card in hand]
-    counts = {card: hand.count(card) for card in hand if card != 'J'}
-    joker_count = hand.count('J')
+    counts = {card: hand.count(card) for card in hand if card != "J"}
+    joker_count = hand.count("J")
     if counts:
         counts[max(counts, key=counts.get)] += joker_count
     else:
@@ -46,7 +48,9 @@ def sort_hands(hand_info):
 
 
 # Rank and sort the hands
-ranked_hands = sorted([(hand, int(bid)) for hand, bid in hands], key=sort_hands, reverse=True)
+ranked_hands = sorted(
+    [(hand, int(bid)) for hand, bid in hands], key=sort_hands, reverse=True
+)
 
 # Calculate total winnings
 total_winnings = sum(bid * (index + 1) for index, (_, bid) in enumerate(ranked_hands))
