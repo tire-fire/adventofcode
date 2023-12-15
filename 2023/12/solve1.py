@@ -9,6 +9,7 @@ from tqdm import tqdm
 with open("input", "r") as f:
     inp = [x.strip() for x in f.readlines() if x.strip()]
 
+
 def count_arrangements(spring_row, group_sizes, memo):
     if (spring_row, group_sizes) in memo:
         return memo[(spring_row, group_sizes)]
@@ -36,7 +37,7 @@ def count_arrangements(spring_row, group_sizes, memo):
         if new_row[index] == "?":
             for replacement in [".", "#"]:
                 new_row[index] = replacement
-                count += generate_combinations(index + 1, ''.join(new_row))
+                count += generate_combinations(index + 1, "".join(new_row))
             new_row[index] = "?"
         else:
             count += generate_combinations(index + 1, spring_row)
@@ -46,6 +47,7 @@ def count_arrangements(spring_row, group_sizes, memo):
     total = generate_combinations(0, spring_row)
     memo[(spring_row, group_sizes)] = total
     return total
+
 
 memo = {}
 total = 0

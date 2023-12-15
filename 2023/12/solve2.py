@@ -31,7 +31,10 @@ def count_arrangements(spring_row, group_sizes, memo):
         possible = f'{"." * position}{"#" * group_sizes[0]}.'
 
         # check each point in the spring_row with the possible and see if it's valid
-        if all(spring == possible_spring or spring == "?" for spring, possible_spring in zip(spring_row, possible)):
+        if all(
+            spring == possible_spring or spring == "?"
+            for spring, possible_spring in zip(spring_row, possible)
+        ):
             total += count_arrangements(
                 spring_row[position + group_sizes[0] + 1 :], group_sizes[1:], memo
             )
