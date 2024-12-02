@@ -1,0 +1,84 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"github.com/tire-fire/adventofcode/2024/lib"
+)
+
+func isSafe(levels []int) bool {
+	if len(levels) < 2 {
+		return false // A single level cannot be increasing or decreasing
+	}
+
+	isIncreasing := true
+	isDecreasing := true
+
+	for i := 1; i < len(levels); i++ {
+		diff := levels[i] - levels[i-1]
+
+		// Check if the difference is out of the acceptable range
+		if diff < -3 || (diff > -1 && diff < 1) || diff > 3 {
+			return false
+		}
+
+		// Update the trend flags
+		if diff < 0 {
+			isIncreasing = false
+		}
+		if diff > 0 {
+			isDecreasing = false
+		}
+	}
+
+	// Safe if the levels are all increasing or all decreasing
+	return isIncreasing || isDecreasing
+}
+
+func countSafeReports(reports [][]int) int {
+	safeCount := 0
+
+	for _, levels := range reports {
+		if isSafe(levels) {
+			safeCount++
+		}
+	}
+
+	return safeCount
+}
+
+func parseReports(lines []string) ([][]int, error) {
+	var reports [][]int
+
+	for _, line := range lines {
+		nums := strings.Fields(line)
+
+		var levels []int
+		for _, numStr := range nums {
+			num, err := strconv.Atoi(numStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid number: %s", numStr)
+			}
+			levels = append(levels, num)
+		}
+		reports = append(reports, levels)
+	}
+
+	return reports, nil
+}
+
+func main() {
+	lines, err := ReadInput()
+	if err != nil {
+		fmt.Fatalf("Failed to read input: %v", err)
+	}
+
+	reports, err := parseReports(lines)
+	if err != nil {
+		fmt.Fatalf("Failed to parse reports: %v", err)
+	}
+
+	safeCount := countSafeReports(reports)
+	fmt.Printf(safeCount)
+}
