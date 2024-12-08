@@ -22,7 +22,7 @@ func findWordCount(grid [][]rune) int {
 	count := 0
 	for row := 1; row < len(grid)-1; row++ {
 		for col := 1; col < len(grid[row])-1; col++ {
-			fmt.Printf("Checking center at (%d, %d)", row, col)
+			fmt.Println("Checking center at (%d, %d)", row, col)
 			if matchesWord(grid, row, col) {
 				count++
 			}
@@ -50,12 +50,12 @@ func matchesWord(grid [][]rune, row, col int) bool {
 		bottomRight = grid[row+1][col+1]
 	}
 
-	fmt.Printf("Top-left: %c, Top-right: %c, Center: %c, Bottom-left: %c, Bottom-right: %c",
+	fmt.Println("Top-left: %c, Top-right: %c, Center: %c, Bottom-left: %c, Bottom-right: %c",
 		topLeft, topRight, center, bottomLeft, bottomRight)
 
 	// Center must be 'A'
 	if center != 'A' {
-		fmt.Printf("Center (%d, %d) is not 'A', skipping.", row, col)
+		fmt.Println("Center (%d, %d) is not 'A', skipping.", row, col)
 		return false
 	}
 
@@ -66,7 +66,7 @@ func matchesWord(grid [][]rune, row, col int) bool {
 		(bottomRight == 'M' || bottomRight == 'S') &&
 		(topLeft != bottomRight) && // Opposite diagonals
 		(topRight != bottomLeft) {
-		fmt.Printf("Matched X-MAS pattern at center (%d, %d)", row, col)
+		fmt.Println("Matched X-MAS pattern at center (%d, %d)", row, col)
 		return true
 	}
 
@@ -74,9 +74,9 @@ func matchesWord(grid [][]rune, row, col int) bool {
 }
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	grid := parseGrid(lines)

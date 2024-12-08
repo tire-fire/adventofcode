@@ -17,7 +17,7 @@ func parseAndCalculate(lines []string) int {
 	enabled := true // Multiplications are enabled at the start
 
 	for _, line := range lines {
-		fmt.Printf("Processing line: %s", line)
+		fmt.Println("Processing line: %s", line)
 
 		// Split the line into possible segments
 		segments := strings.Split(line, ")")
@@ -40,7 +40,7 @@ func parseAndCalculate(lines []string) int {
 			if enabled {
 				// Find valid mul(X,Y) instructions
 				matches := mulRe.FindAllStringSubmatch(segment, -1)
-				fmt.Printf("Found mul matches: %v", matches)
+				fmt.Println("Found mul matches: %v", matches)
 
 				for _, match := range matches {
 					// Extract X and Y from the match and convert to integers
@@ -49,7 +49,7 @@ func parseAndCalculate(lines []string) int {
 
 					if err1 == nil && err2 == nil {
 						product := x * y
-						fmt.Printf("mul(%d,%d) = %d", x, y, product)
+						fmt.Println("mul(%d,%d) = %d", x, y, product)
 						totalSum += product
 					}
 				}
@@ -61,9 +61,9 @@ func parseAndCalculate(lines []string) int {
 }
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	result := parseAndCalculate(lines)

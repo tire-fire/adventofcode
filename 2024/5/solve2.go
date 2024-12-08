@@ -23,7 +23,7 @@ func parseInput(lines []string) (map[int][]int, [][]int) {
 			// Parse rules
 			parts := strings.Split(line, "|")
 			if len(parts) != 2 {
-				fmt.Fatalf("Invalid rule format: %s", line)
+				panic("Invalid rule format")
 			}
 			x, _ := strconv.Atoi(parts[0])
 			y, _ := strconv.Atoi(parts[1])
@@ -110,21 +110,18 @@ func topologicalSort(rules map[int][]int, update []int) []int {
 	}
 
 	var sorted []int
-	var queue []int
+	var current int
 
-	// Start with pages with in-degree 0
+	// Start with page with in-degree 0
 	for page, degree := range inDegree {
 		if degree == 0 {
-			queue = append(queue, page)
+			current = page
+			break
 		}
 	}
 
-	for len(queue) > 0 {
-		fmt.Println("queue:", len(queue))
-		// Pop a page from the queue
-		current := queue[0]
-		queue = queue[1:]
-
+	// sort by in-degree
+	for len(sorted) < len(inDegree) {
 		// Add it to the sorted order
 		sorted = append(sorted, current)
 
@@ -132,7 +129,7 @@ func topologicalSort(rules map[int][]int, update []int) []int {
 		for _, neighbor := range graph[current] {
 			inDegree[neighbor]--
 			if inDegree[neighbor] == 0 {
-				queue = append(queue, neighbor)
+				current = neighbor
 			}
 		}
 	}
@@ -150,9 +147,9 @@ func contains(slice []int, item int) bool {
 }
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	rules, updates := parseInput(lines)

@@ -23,7 +23,7 @@ func parseInput(lines []string) (map[int][]int, [][]int) {
 			// Parse rules
 			parts := strings.Split(line, "|")
 			if len(parts) != 2 {
-				fmt.Fatalf("Invalid rule format: %s", line)
+				panic("Invalid rule format")
 			}
 			x, _ := strconv.Atoi(parts[0])
 			y, _ := strconv.Atoi(parts[1])
@@ -87,9 +87,9 @@ func isValidUpdate(rules map[int][]int, update []int) bool {
 }
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	rules, updates := parseInput(lines)

@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	totalCalibration := 0

@@ -57,9 +57,9 @@ func matchesWord(grid [][]rune, word string, row, col int, dir [2]int, wordLen i
 }
 
 func main() {
-	lines, err := ReadInput()
+	lines, err := lib.ReadInput()
 	if err != nil {
-		fmt.Fatalf("Failed to read input: %v", err)
+		panic("Failed to read input")
 	}
 
 	grid := parseGrid(lines)
