@@ -16,7 +16,7 @@ func main() {
 	totalCalibration := 0
 	for _, line := range lines {
 		target, numbers := parseEquation(line)
-		if canAchieveTarget(target, numbers) {
+		if evaluate(target, numbers, 0, 0) {
 			totalCalibration += target
 		}
 	}
@@ -35,45 +35,35 @@ func parseEquation(line string) (int, []int) {
 	return target, numbers
 }
 
-func canAchieveTarget(target int, numbers []int) bool {
-	memo := make(map[string]bool)
-	return evaluateWithMemo(numbers, target, 0, 0, memo)
-}
-
-func evaluateWithMemo(numbers []int, target, currentIndex, currentResult int, memo map[string]bool) bool {
+func evaluate(numbers []int, target, currentIndex, currentResult int) bool {
 	if currentIndex == len(numbers) {
 		return currentResult == target
 	}
 
-	memoKey := fmt.Sprintf("%d:%d", currentIndex, currentResult)
-	if val, exists := memo[memoKey]; exists {
-		return val
+	if currentResult > target {
+		return false
 	}
 
 	nextNumber := numbers[currentIndex]
 
 	// Try addition
-	if evaluateWithMemo(numbers, target, currentIndex+1, currentResult+nextNumber, memo) {
-		memo[memoKey] = true
+	if evaluate(numbers, target, currentIndex+1, currentResult+nextNumber) {
 		return true
 	}
 
 	// Try multiplication
-	if evaluateWithMemo(numbers, target, currentIndex+1, currentResult*nextNumber, memo) {
-		memo[memoKey] = true
+	if evaluate(numbers, target, currentIndex+1, currentResult*nextNumber) {
 		return true
 	}
 
 	// Try concatenation
 	if currentIndex > 0 {
 		concatenated, _ := strconv.Atoi(fmt.Sprintf("%d%d", currentResult, nextNumber))
-		if evaluateWithMemo(numbers, target, currentIndex+1, concatenated, memo) {
-			memo[memoKey] = true
+		if evaluate(numbers, target, currentIndex+1, concatenated) {
 			return true
 		}
 	}
 
-	memo[memoKey] = false
 	return false
 }
 
