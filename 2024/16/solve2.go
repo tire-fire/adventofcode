@@ -74,6 +74,7 @@ func aStar(grid [][]rune, start, end Point, directions []Point, minScore int) ma
 				for _, point := range current.path {
 					tileMarks[point] = true
 				}
+				fmt.Printf("Found path with score: %d\n", current.score)
 			}
 			continue
 		}
