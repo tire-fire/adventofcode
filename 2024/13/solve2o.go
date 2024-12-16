@@ -3,27 +3,28 @@ package main
 import (
 	"fmt"
 	"math/big"
-	"github.com/tire-fire/adventofcode/2024/lib"
 )
 
+// Machine structure
 type Machine struct {
 	Ax, Ay *big.Int
 	Bx, By *big.Int
 	Px, Py *big.Int
 }
 
-var machines []Machine
-
 func main() {
-	lines, err := lib.ReadInput()
-	if err != nil {
-		panic("Failed to read input")
+	// Original machines (Part One input)
+	// Now we add 10,000,000,000,000 to Px and Py for each machine as specified in part two
+	offset := big.NewInt(10000000000000)
+
+	machines := []Machine{
+		newMachine(94, 34, 22, 67, 8400, 5400, offset),
+		newMachine(26, 66, 67, 21, 12748, 12176, offset),
+		newMachine(17, 86, 84, 37, 7870, 6450, offset),
+		newMachine(69, 23, 27, 71, 18641, 10279, offset),
 	}
 
-	machines = parseMachines(lines)
-	fmt.Println(machines)
-
-	winnableCosts := []*big.Int{}
+	winnableCosts := []int{}
 
 	for _, m := range machines {
 		cost, ok := solveMachine(m)
@@ -32,37 +33,32 @@ func main() {
 		}
 	}
 
+	// According to the puzzle statement, now only machines #2 and #4 are solvable.
 	// So we should find exactly those two solutions.
-	totalCost := big.NewInt(0)
+	totalCost := 0
 	for _, c := range winnableCosts {
-		totalCost.Add(totalCost, c)
+		totalCost += c
 	}
 
-	fmt.Println(len(winnableCosts), totalCost)
+	fmt.Println("Fewest tokens to win all possible prizes:", totalCost)
 }
 
-func parseMachines(lines []string) []Machine {
-	offset := big.NewInt(10000000000000)
-	for i := 0; i < len(lines); i += 4 {
-		if lines[i] == "" {
-			continue
-		}
-		var aX, aY, bX, bY, pX, pY int64
-		fmt.Sscanf(lines[i], "Button A: X+%d, Y+%d", &aX, &aY)
-		fmt.Sscanf(lines[i+1], "Button B: X+%d, Y+%d", &bX, &bY)
-		fmt.Sscanf(lines[i+2], "Prize: X=%d, Y=%d", &pX, &pY)
-		PxBig := big.NewInt(pX)
-		PyBig := big.NewInt(pY)
-		PxBig.Add(PxBig, offset)
-		PyBig.Add(PyBig, offset)
-		machines = append(machines, Machine{big.NewInt(aX), big.NewInt(aY), big.NewInt(bX), big.NewInt(bY), PxBig, PyBig})
+// newMachine creates a Machine with given parameters and applies the offset to Px, Py.
+func newMachine(Ax, Ay, Bx, By, Px, Py int64, offset *big.Int) Machine {
+	PxBig := big.NewInt(Px)
+	PyBig := big.NewInt(Py)
+	PxBig.Add(PxBig, offset)
+	PyBig.Add(PyBig, offset)
+	return Machine{
+		Ax: big.NewInt(Ax), Ay: big.NewInt(Ay),
+		Bx: big.NewInt(Bx), By: big.NewInt(By),
+		Px: PxBig, Py: PyBig,
 	}
-	return machines
 }
 
 // solveMachine tries to solve the linear system for the given machine.
 // Returns (cost, true) if solvable and (0, false) if not.
-func solveMachine(m Machine) (*big.Int, bool) {
+func solveMachine(m Machine) (int, bool) {
 	// D = Ax*By - Ay*Bx
 	D := new(big.Int).Sub(
 		new(big.Int).Mul(m.Ax, m.By),
@@ -71,7 +67,7 @@ func solveMachine(m Machine) (*big.Int, bool) {
 
 	if D.Sign() == 0 {
 		// No unique solution
-		return big.NewInt(0), false
+		return 0, false
 	}
 
 	// a_num = Px*By - Py*Bx
@@ -88,7 +84,7 @@ func solveMachine(m Machine) (*big.Int, bool) {
 
 	// Check divisibility for a and b
 	if !divisible(a_num, D) || !divisible(b_num, D) {
-		return big.NewInt(0), false
+		return 0, false
 	}
 
 	a := new(big.Int).Div(a_num, D)
@@ -96,7 +92,7 @@ func solveMachine(m Machine) (*big.Int, bool) {
 
 	// a and b must be nonnegative
 	if a.Sign() < 0 || b.Sign() < 0 {
-		return big.NewInt(0), false
+		return 0, false
 	}
 
 	// cost = 3*a + b
@@ -105,7 +101,15 @@ func solveMachine(m Machine) (*big.Int, bool) {
 	cost := new(big.Int).Mul(a, big.NewInt(3))
 	cost.Add(cost, b)
 
-	return cost, true
+	if cost.IsInt64() {
+		return int(cost.Int64()), true
+	} else {
+		// If the cost doesn't fit in int (which would be extremely large),
+		// we can return the big number as a string or handle differently.
+		// Problem doesn't specify extremely large inputs beyond int64.
+		// We'll assume it fits.
+		return 0, false
+	}
 }
 
 // divisible checks if x is divisible by y
@@ -114,3 +118,4 @@ func divisible(x, y *big.Int) bool {
 	mod := new(big.Int).Mod(x, y)
 	return mod.Sign() == 0
 }
+
