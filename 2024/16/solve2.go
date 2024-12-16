@@ -68,9 +68,9 @@ func aStar(grid [][]rune, start, end Point, directions []Point, minScore int) ma
 	for pq.Len() > 0 {
 		current := heap.Pop(pq).(Path)
 
-		// If we've reached the end, print the score and mark the path if it matches minScore
+		fmt.Printf("Current node: %v, Score: %d\n", current.currentNode, current.score)
 		if current.currentNode == end {
-			fmt.Printf("Found path with score: %d\n", current.score)
+			fmt.Printf("Reached end node: %v with score: %d\n", current.currentNode, current.score)
 			if current.score == minScore {
 				for _, point := range current.path {
 					tileMarks[point] = true
