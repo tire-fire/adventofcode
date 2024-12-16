@@ -82,7 +82,10 @@ func aStar(grid [][]rune, start, end Point, directions []Point, minScore int) ma
 		if bestScore, found := visited[current.currentNode]; found && current.score > bestScore {
 			continue
 		}
-		visited[current.currentNode] = current.score
+		// Update the visited map only if the current score is less than or equal to the best score
+		if bestScore, found := visited[current.currentNode]; !found || current.score <= bestScore {
+			visited[current.currentNode] = current.score
+		}
 
 		// Explore neighbors
 		for newDir, dir := range directions {
