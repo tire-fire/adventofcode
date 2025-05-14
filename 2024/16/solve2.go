@@ -1,9 +1,10 @@
 package main
 
 import (
-	"container/heap"
+	"container/list"
 	"fmt"
 	"strings"
+	"math"
 	"github.com/tire-fire/adventofcode/2024/lib"
 )
 
@@ -11,117 +12,133 @@ type Point struct {
 	x, y int
 }
 
-type Path struct {
-	currentNode Point
-	direction   int
-	score       int
-	priority    int
-	path        []Point
+// Use integers to represent directions
+const (
+	UP    = 0
+	RIGHT = 1
+	DOWN  = 2
+	LEFT  = 3
+)
+
+var directions = []struct {
+	delta    Point
+	turnDirs [2]int
+}{
+	{Point{-1, 0}, [2]int{RIGHT, LEFT}}, // UP: move straight, can turn RIGHT or LEFT
+	{Point{0, 1}, [2]int{DOWN, UP}},     // RIGHT
+	{Point{1, 0}, [2]int{LEFT, RIGHT}},  // DOWN
+	{Point{0, -1}, [2]int{UP, DOWN}},    // LEFT
 }
 
-type PriorityQueue []Path
-
-func (pq PriorityQueue) Len() int { return len(pq) }
-func (pq PriorityQueue) Less(i, j int) bool { return pq[i].priority < pq[j].priority }
-func (pq PriorityQueue) Swap(i, j int) { pq[i], pq[j] = pq[j], pq[i] }
-
-func (pq *PriorityQueue) Push(x interface{}) {
-	*pq = append(*pq, x.(Path))
+type State struct {
+	i, j      int            // Current position
+	dir       int            // Direction: 0 (UP), 1 (RIGHT), 2 (DOWN), 3 (LEFT)
+	score     int            // Accumulated score
+	path      map[Point]bool // Set of visited points
 }
 
-func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	*pq = old[0 : n-1]
-	return item
+func initializeValues(grid [][]rune) [][]map[int]struct {
+	score int
+	path  map[Point]bool
+} {
+	values := make([][]map[int]struct {
+		score int
+		path  map[Point]bool
+	}, len(grid))
+
+	for i := range grid {
+		values[i] = make([]map[int]struct {
+			score int
+			path  map[Point]bool
+		}, len(grid[i]))
+		for j := range grid[i] {
+			values[i][j] = make(map[int]struct {
+				score int
+				path  map[Point]bool
+			})
+			for d := 0; d < 4; d++ {
+				values[i][j][d] = struct {
+					score int
+					path  map[Point]bool
+				}{math.MaxInt, make(map[Point]bool)}
+			}
+		}
+	}
+	return values
 }
 
 func isValidPosition(grid [][]rune, point Point) bool {
 	return point.x >= 0 && point.x < len(grid[0]) && point.y >= 0 && point.y < len(grid) && grid[point.y][point.x] != '#'
 }
 
-func heuristic(a, b Point) int {
-	return abs(a.x-b.x) + abs(a.y-b.y)
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
+func copyPath(original map[Point]bool) map[Point]bool {
+	newPath := make(map[Point]bool)
+	for k := range original {
+		newPath[k] = true
 	}
-	return x
+	return newPath
 }
 
-func aStar(grid [][]rune, start, end Point, directions []Point, minScore int) map[Point]bool {
-	visited := make(map[Point]int)
-	tileMarks := make(map[Point]bool)
-	pq := &PriorityQueue{}
-	heap.Init(pq)
-	heap.Push(pq, Path{
-		currentNode: start,
-		direction:   0,
-		score:       0,
-		priority:    heuristic(start, end),
-		path:        []Point{start},
-	})
+func dfs(grid [][]rune, start, end Point) map[int]struct {
+	score int
+	path  map[Point]bool
+} {
+	values := initializeValues(grid)
+	q := list.New()
+	initialPath := map[Point]bool{start: true}
+	q.PushBack(State{start.x, start.y, RIGHT, 0, initialPath})
 
-	for pq.Len() > 0 {
-		current := heap.Pop(pq).(Path)
+	for q.Len() > 0 {
+		e := q.Front()
+		q.Remove(e)
+		state := e.Value.(State)
+	
+i, j, d, score, path := state.i, state.j, state.dir, state.score, state.path
 
-		fmt.Printf("Current node: %v, Score: %d\n", current.currentNode, current.score)
-		if current.currentNode == end {
-			fmt.Printf("Reached end node: %v with score: %d\n", current.currentNode, current.score)
-			if current.score == minScore {
-				for _, point := range current.path {
-					tileMarks[point] = true
-				}
-			}
+		// Bounds check and wall check
+		if !isValidPosition(grid, Point{i, j}) {
 			continue
 		}
 
-		// Skip nodes if a better score has already been recorded
-		if bestScore, found := visited[current.currentNode]; found && current.score > bestScore {
+		// Update path and check current state
+		path[Point{i, j}] = true
+		current := values[i][j][d]
+		if current.score < score {
+			continue
+		} else if current.score == score {
+			for p := range path {
+				current.path[p] = true
+			}
+		} else {
+			newPath := copyPath(path)
+			values[i][j][d] = struct {
+				score int
+				path  map[Point]bool
+			}{score, newPath}
+		}
+
+		// Stop if end reached
+		if i == end.x && j == end.y {
 			continue
 		}
-		// Update the visited map to include paths with scores equal to the best score
-		visited[current.currentNode] = current.score
 
-		// Explore neighbors
-		for newDir, dir := range directions {
-			newNode := Point{x: current.currentNode.x + dir.x, y: current.currentNode.y + dir.y}
-			if !isValidPosition(grid, newNode) {
-				continue
-			}
+		// Move straight
+		move := directions[d]
+		q.PushBack(State{i + move.delta.x, j + move.delta.y, d, score + 1, copyPath(path)})
 
-			// Calculate the new score, adding 1000 if there's a turn
-			turnCost := 0
-			if newDir != current.direction {
-				turnCost = 1000
-			}
-			newScore := current.score + 1 + turnCost
-
-			// Only push paths that do not exceed minScore
-			if newScore <= minScore {
-				heap.Push(pq, Path{
-					currentNode: newNode,
-					direction:   newDir,
-					score:       newScore,
-					priority:    newScore + heuristic(newNode, end),
-					path:        append([]Point{}, append(current.path, newNode)...),
-				})
-			}
+		// Turn left and right
+		for _, newDir := range move.turnDirs {
+			q.PushBack(State{i, j, newDir, score + 1000, copyPath(path)})
 		}
 	}
-
-	return tileMarks
+	return values[end.x][end.y]
 }
 
 func main() {
-	lines, err := lib.ReadLines("exampleinput")
+	lines, err := lib.ReadInput()
 	if err != nil {
 		panic("Failed to read input")
 	}
-
 	grid := make([][]rune, len(lines))
 	var start, end Point
 
@@ -134,82 +151,17 @@ func main() {
 			end = Point{x: strings.Index(line, "E"), y: y}
 		}
 	}
+	score := dfs(grid, start, end)
 
-	directions := []Point{
-		{x: 1, y: 0},  // East
-		{x: 0, y: 1},  // South
-		{x: -1, y: 0}, // West
-		{x: 0, y: -1}, // North
-	}
-
-	// First, determine the minimum score using A*
-	pq := &PriorityQueue{}
-	heap.Init(pq)
-	heap.Push(pq, Path{
-		currentNode: start,
-		direction:   0,
-		score:       0,
-		priority:    heuristic(start, end),
-	})
-
-	minScore := -1
-	visited := make(map[Point]int)
-
-	for pq.Len() > 0 {
-		current := heap.Pop(pq).(Path)
-
-		if current.currentNode == end {
-			if minScore == -1 || current.score < minScore {
-				minScore = current.score
-			}
-			continue
-		}
-
-		if bestScore, found := visited[current.currentNode]; found && current.score >= bestScore {
-			continue
-		}
-		visited[current.currentNode] = current.score
-
-		for newDir, dir := range directions {
-			newNode := Point{x: current.currentNode.x + dir.x, y: current.currentNode.y + dir.y}
-			if !isValidPosition(grid, newNode) {
-				continue
-			}
-
-			turnCost := 0
-			if newDir != current.direction {
-				turnCost = 1000
-			}
-			newScore := current.score + 1 + turnCost
-
-			heap.Push(pq, Path{
-				currentNode: newNode,
-				direction:   newDir,
-				score:       newScore,
-				priority:    newScore + heuristic(newNode, end),
-			})
+	resp := 0
+	minScore := math.MaxInt
+	for _, v := range score {
+		if v.score < minScore {
+			resp = len(v.path)
+			minScore = v.score
 		}
 	}
 
-	// Now, find all paths using A* with the determined minScore
-	tileMarks := aStar(grid, start, end, directions, minScore)
-
-	// Count the tiles that are part of any best path
-	total := 0
-	for y := range grid {
-		for x := range grid[y] {
-			if tileMarks[Point{x: x, y: y}] {
-				total++
-				grid[y][x] = 'O'
-			}
-		}
-	}
-
-	fmt.Println("Total tiles part of any best path:", total)
-
-	// Optionally, print the grid with marked paths
-	for _, line := range grid {
-		fmt.Println(string(line))
-	}
+	fmt.Println("Tiles part of the best path:", resp)
 }
 
